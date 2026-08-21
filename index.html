@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ody Store — أودي ستور</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root{
+    --cream:#F1EADA;
+    --cream2:#E9E1CC;
+    --navy:#132C2A;
+    --navy2:#1B3937;
+    --orange:#CE4E2B;
+    --orange-d:#B8431F;
+    --yellow:#F1BA1E;
+    --ink:#1C1B16;
+    --muted:#6E6B5C;
+    --line:rgba(28,27,22,0.14);
+    --line-navy:rgba(241,234,218,0.16);
+  }
+
+  *{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+  }
+
+  html,body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Cairo',sans-serif;
+  }
+
+  body{
+    min-height:100vh;
+  }
+
+  h1,h2,h3,h4{
+    font-weight:900;
+    line-height:1.15;
+  }
+
+  p{
+    line-height:1.85;
+    color:var(--muted);
+  }
+
+  a{
+    color:inherit;
+    text-decoration:none;
+  }
+
+  button{
+    font-family:'Cairo',sans-serif;
+    cursor:pointer;
+  }
+
+  img{
+    max-width:100%;
+    display:block;
+  }
+
+  .wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:0 22px;
+  }
+
+  /* ================= HEADER ================= */
+
+  header{
+    position:sticky;
+    top:0;
+    z-index:60;
+    background:rgba(241,234,218,0.94);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    box-shadow:0 2px 12px rgba(28,27,22,.04);
+  }
+
+  .nav-wrap{
+    max-width:760px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 22px;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+    user-select:none;
+  }
+
+  .brand .box{
+    width:38px;
+    height:38px;
+    background:var(--orange);
+    color:var(--cream);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    font-size:16px;
+    border-radius:9px;
+    flex-shrink:0;
+  }
+
+  .brand .name{
+    font-size:18px;
+    font-weight:900;
+    letter-spacing:.3px;
+  }
+
+  .brand .name b{
+    color:var(--orange);
+  }
+
+  .icon-btns{
+    display:flex;
+    gap:8px;
+  }
+
+  .icon-btn{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    font-size:17px;
+    transition:
+      background .15s,
+      border-color .15s,
+      transform .1s;
+  }
+
+  .icon-btn:hover{
+    background:var(--cream2);
+    border-color:var(--orange);
+  }
+
+  .icon-btn:active{
+    transform:scale(.92);
+  }
+
+  .icon-btn .dot{
+    position:absolute;
+    top:-3px;
+    left:-3px;
+    background:var(--orange);
+    color:#fff;
+    font-size:10px;
+    width:17px;
+    height:17px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+  }
+
+  .menu-panel{
+    max-width:760px;
+    margin:0 auto;
+    padding:0 22px;
+    overflow:hidden;
+    max-height:0;
+    transition:max-height .25s ease;
+  }
+
+  .menu-panel.open{
+    max-height:300px;
+  }
+
+  .menu-panel .inner{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    padding:10px 0 18px;
+  }
+
+  .menu-panel button{
+    background:none;
+    border:none;
+    text-align:right;
+    padding:11px 6px;
+    font-size:15px;
+    font-weight:700;
+    color:var(--ink);
+    border-radius:6px;
+  }
+
+  .menu-panel button.active{
+    color:var(--orange);
+  }
+
+  .menu-panel button:hover{
+    background:var(--cream2);
+  }
+
+  /* ================= BUTTONS ================= */
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border:1px solid var(--line);
+    border-radius:30px;
+    padding:10px 20px;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.3px;
+  }
+
+  .pill.dark{
+    background:var(--navy);
+    color:var(--cream);
+    border:none;
+  }
+
+  .pill.dark:hover{
+    background:var(--navy2);
+  }
+
+  .pill.ghost:hover{
+    background:rgba(28,27,22,.05);
+  }
+
+  .btn-main{
+    width:100%;
+    background:var(--orange);
+    color:#fff;
+    border:none;
+    padding:14px 18px;
+    border-radius:12px;
+    font-size:15px;
+    font-weight:900;
+    transition:.15s;
+  }
+
+  .btn-main:hover{
+    background:var(--orange-d);
+  }
+
+  .btn-main:disabled{
+    opacity:.55;
+    cursor:not-allowed;
+  }
+
+  .btn-ghost{
+    width:100%;
+    background:none;
+    color:var(--ink);
+    border:1px solid var(--line);
+    padding:13px 18px;
+    border-radius:12px;
+    font-size:14px;
+    font-weight:800;
+    margin-top:8px;
+  }
+
+  .btn-ghost:hover{
+    background:var(--cream2);
+  }
+
+  /* ================= HERO ================= */
+
+  .hero{
+    padding:46px 0 10px;
+  }
+
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:12px;
+    letter-spacing:2px;
+    color:var(--orange);
+    font-weight:800;
+    margin-bottom:22px;
+  }
+
+  .eyebrow .dash{
+    width:26px;
+    height:2px;
+    background:var(--orange);
+  }
+
+  .hero h1{
+    font-size:56px;
+    letter-spacing:-1px;
+  }
+
+  .hero h1 .l1{
+    color:var(--navy);
+    display:block;
+  }
+
+  .hero h1 .l2{
+    color:var(--orange);
+    display:block;
+  }
+
+  .hero p.lead{
+    font-size:16px;
+    margin:22px 0 26px;
+    max-width:480px;
+  }
+
+  .btn-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:44px;
+  }
+
+  /* ================= POSTER ================= */
+
+ 
