@@ -255,16 +255,16 @@ const state = {
   editingProduct: null,
   adminTab: 'products'
 };
-const ADMIN_CODE = '12345677yy'; // كود دخول الأدمن - غيّره من هنا
+const ADMIN_CODE = ''; // كود دخول الأدمن - غيّره من هنا
 
 /* ============ SUPABASE ============ */
 const SUPABASE_URL = 'https://zpeonmredkjxbhjrdtec.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_AsQe1XhyU8_lMP9Q8jwivQ_1rUzlfjh';
+const SUPABASE_ANON_KEY = '';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ============ إشعار واتساب (CallMeBot) ============ */
 const WHATSAPP_PHONE = '201559937937';
-const WHATSAPP_APIKEY = '3661173';
+const WHATSAPP_APIKEY = '';
 function sendWhatsAppNotify(order){
   const text = `طلب جديد على Ody Store 🛍️%0A`
     + `رقم الطلب: ${order.id}%0A`
