@@ -72,7 +72,6 @@
   .marquee-track{display:inline-block; animation:scroll 18s linear infinite; font-weight:800; font-size:13px; letter-spacing:1px; color:var(--ink);}
   .marquee-track span{margin:0 22px;}
   @keyframes scroll{0%{transform:translateX(0);} 100%{transform:translateX(-50%);}}
-  @media (prefers-reduced-motion: reduce){.marquee-track{animation:none;}}
 
   /* section titles */
   .sec-title{margin-bottom:26px;}
@@ -212,10 +211,11 @@ const state = {
   selectedSizes: {},
   authMode: 'login',
   editingProduct: null,
-  adminTab: 'products'
+  adminTab: 'products',
+  productImgIdx: 0
 };
 
-/* الإيميل الوحيد المسموح له بدخول لوحة التحكم */
+/* الإيميل الوحيد المسموح له بدخول لوحة التحكم وضبط كل حاجة */
 const ADMIN_EMAIL = 'yahiayy2000@gmail.com';
 
 /* ============ SUPABASE ============ */
@@ -223,10 +223,14 @@ const SUPABASE_URL = 'https://zpeonmredkjxbhjrdtec.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_AsQe1XhyU8_lMP9Q8jwivQ_1rUzlfjh';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* دالة تحويل الطلب لتفتح واتساب الزبون مباشرة وآمن تماماً */
-function sendWhatsAppOrder(order) {
+/* دالة إرسال الطلب للواتساب مباشرة وآمنة تماماً بدون مفاتيح سرية */
+function sendWhatsAppNotify(order){
   const phone = '201559937937';
-  let text = `طلب جديد من المتجر 🛍️%0Aرقم الطلب: ${order.id}%0Aالعميل: ${order.userName}%0Aالموبايل: ${order.phone}%0Aالعنوان: ${order.address}%0A%0Aالمنتجات:%0A`;
+  let text = `طلب جديد على Ody Store 🛍️%0A`
+    + `رقم الطلب: ${order.id}%0A`
+    + `العميل: ${order.userName}%0A`
+    + `الموبايل: ${order.phone}%0A`
+    + `العنوان: ${order.address}%0A%0Aالمنتجات:%0A`;
   order.items.forEach(item => {
     text += `- ${item.name} (${item.size}) × ${item.qty} = ${item.price * item.qty} ج.م%0A`;
   });
@@ -293,7 +297,7 @@ document.getElementById('menu-toggle').addEventListener('click', ()=>{
 });
 document.getElementById('cart-icon-btn').addEventListener('click', ()=>{ setView('cart'); });
 
-/* الضغط على اللوجو 5 مرات يفتح صفحة الأدمن المحمية */
+/* الضغط على اللوجو 5 مرات يفتح صفحة الأدمن */
 let logoClicks = 0;
 let logoClickTimer = null;
 document.getElementById('logo-secret').addEventListener('click', ()=>{
@@ -412,18 +416,44 @@ function renderProductPage(){
     <button class="btn-ghost" data-view="shop" style="margin-bottom:16px;">→ رجوع للمتجر</button>
     <div class="panel" style="padding:0; overflow:hidden;">
       <div class="imgwrap" style="aspect-ratio:1/1;">
-        ${mainImg ? `<img src="${mainImg}" alt="${escapeHtml(p.name)}" style="width:100%; height:100%; object-fit:cover;">` : `<div class="noimg">لا توجد صورة</div>`}
+        ${mainImg ? `<img src="${mainImg}" alt="${escapeHtml(p.name)}" data-zoom="${mainImg}" style="width:100%; height:100%; object-fit:cover;">` : `<div class="noimg">لا توجد صورة</div>`}
       </div>
+      ${gallery.length>1 ? `
+        <div style="display:flex; gap:8px; padding:12px 16px 0; overflow-x:auto;">
+          ${gallery.map((src,i)=>`<img src="${src}" data-thumb="${i}" style="width:56px; height:56px; object-fit:cover; border-radius:8px; flex-shrink:0; cursor:pointer; border:2px solid ${i===activeIdx?'var(--orange)':'transparent'};">`).join('')}
+        </div>` : ''}
       <div style="padding:20px;">
         <h2 style="margin-bottom:4px;">${escapeHtml(p.name)}</h2>
+        <div id="rating-summary" style="display:flex; align-items:center; gap:6px; margin-bottom:10px; cursor:pointer; width:fit-content;">
+          ${starsHtml(rs.avg,16)}
+          <span style="font-size:13px; color:${rs.count>0?'var(--muted)':'var(--orange)'};">${rs.count>0 ? `(${rs.count} تقييم)` : 'انقر للتقييم'}</span>
+        </div>
         <div style="font-size:22px; font-weight:800; color:var(--orange); margin-bottom:14px;">${p.price} ج.م</div>
         <div style="color:var(--muted); font-size:14px; margin-bottom:18px;">${escapeHtml(p.desc||'')}</div>
+
         <label style="font-size:13px; font-weight:700; display:block; margin-bottom:8px;">اختار المقاس</label>
         <div class="sizes" data-pid="${p.id}" style="margin-bottom:18px;">
           ${p.sizes.map(s=>`<div class="size-opt ${s===sel?'sel':''}" data-size="${s}">${s}</div>`).join('')}
         </div>
+
         ${out ? `<button class="btn-main" disabled style="opacity:.5;">نفذت الكمية</button>` : `<button class="btn-main" data-add="${p.id}">ضيفه للسلة</button>`}
       </div>
+    </div>
+
+    <div class="panel" id="reviews-panel" style="margin-top:18px;">
+      <div class="cut">✂ آراء وتقييمات (${rs.count})</div>
+      ${canReview ? `
+        <div id="review-form" style="margin-bottom:18px;">
+          <label style="font-size:13px; font-weight:700; display:block; margin-bottom:8px;">قيّم المنتج ده</label>
+          <div id="star-picker" style="display:flex; gap:6px; margin-bottom:10px; font-size:26px; cursor:pointer;">
+            ${[1,2,3,4,5].map(n=>`<span data-star="${n}" style="color:#d8d2c4;">★</span>`).join('')}
+          </div>
+          <textarea id="review-comment" rows="2" placeholder="اكتب رأيك (اختياري)" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px; font-family:inherit; margin-bottom:10px;"></textarea>
+          <div id="review-err"></div>
+          <button class="btn-main" id="submit-review">إرسال التقييم</button>
+        </div>
+      ` : `<div style="font-size:13px; color:var(--muted); margin-bottom:14px;">سجّل دخولك عشان تقدر تقيّم المنتج ده — <a data-view="login" style="color:var(--orange); font-weight:700; cursor:pointer;">سجّل دلوقتي</a></div>`}
+      <div>${reviewsHtml}</div>
     </div>
   </div>`;
 }
@@ -480,7 +510,7 @@ function bindAuthEvents(){
     if(!name||!email||!pass){ err.innerHTML=`<div class="error-msg">املأ كل الحقول</div>`; return; }
     const { error } = await sb.auth.signUp({ email, password: pass, options: { data: { name } } });
     if(error){ err.innerHTML=`<div class="error-msg">حصل خطأ، حاول تاني</div>`; return; }
-    err.innerHTML = `<div class="ok-msg">تم التسجيل بنجاح! تأكد من إيميلك أو سجل دخولك الآن.</div>`;
+    err.innerHTML = `<div class="ok-msg">تم التسجيل بنجاح! سجل دخولك الآن.</div>`;
   });
 
   document.getElementById('do-login')?.addEventListener('click', async ()=>{
@@ -558,7 +588,6 @@ function bindCartEvents(){
       status: 'جديد'
     };
 
-    // حفظ الطلب في قاعدة البيانات Supabase
     await sb.from('orders').insert({
       id: order.id, user_email: order.userEmail, user_name: order.userName,
       items: order.items, total: order.total, phone: order.phone,
@@ -569,8 +598,7 @@ function bindCartEvents(){
     state.cart = [];
     state.lastOrder = order;
     
-    // فتح الواتساب فوراً للعميل بالطلب
-    sendWhatsAppOrder(order);
+    sendWhatsAppNotify(order);
     setView('shop');
   });
 }
@@ -592,18 +620,17 @@ function orderCardHtml(o, showAdmin){
   </div>`;
 }
 
-/* ============ ADMIN GATE (محمي بالإيميل) ============ */
+/* ============ ADMIN GATE (محمي بالإيميل حصرياً) ============ */
 function renderAdminGate(){
-  // إذا لم يتم تسجيل الدخول، أو الإيميل ليس هو إيميلك المخصص
   if(!state.session || state.session.email !== ADMIN_EMAIL){
     return `
     <div class="panel">
       <div class="brandmark"><div class="box">O</div><div style="font-weight:900">Ody Store</div></div>
       <h2>لوحة التحكم المحمية</h2>
-      <div class="sub" style="color:var(--orange-d);">ممنوع الدخول إلا لـ عدي (yahiayy2000@gmail.com)</div>
+      <div class="sub" style="color:var(--orange-d);">ممنوع الدخول إلا لـ عدي (${ADMIN_EMAIL})</div>
       <div id="admin-err"></div>
-      <div class="field"><label>البريد الإلكتروني للأدمن</label><input id="adm-email" type="email" placeholder="yahiayy2000@gmail.com"></div>
-      <div class="field"><label>كلمة المرور</label><input id="adm-pass" type="password" placeholder="••••••••"></div>
+      <div class="field"><label>الإيميل</label><input id="adm-email" type="email" placeholder="yahiayy2000@gmail.com"></div>
+      <div class="field"><label>الباسورد</label><input id="adm-pass" type="password" placeholder="••••••••"></div>
       <button class="btn-main" id="adm-login-btn">دخول لوحة التحكم</button>
     </div>`;
   }
@@ -761,7 +788,14 @@ function bindProductPageEvents(){
   document.querySelectorAll('[data-open]').forEach(el=>{
     el.addEventListener('click', ()=>{
       state.currentProduct = el.dataset.open;
+      state.productImgIdx = 0;
       setView('product');
+    });
+  });
+  document.querySelectorAll('[data-thumb]').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      state.productImgIdx = parseInt(t.dataset.thumb);
+      render();
     });
   });
   document.querySelectorAll('.sizes .size-opt').forEach(el=>{
